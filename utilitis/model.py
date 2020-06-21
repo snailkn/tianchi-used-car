@@ -9,7 +9,7 @@ from sklearn import metrics
 
 
 def to_xgb_dm(x, y):
-    return xgb.DMatrix(x, label=y)
+    return xgb.DMatrix(x.values, label=y.values)
 
 
 class XGBModel(object):
