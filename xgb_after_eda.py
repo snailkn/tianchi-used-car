@@ -71,15 +71,19 @@ class MineFeatureManager(FeatureManager):
         return super().get_model_features(features)
 
 
-def hyper_params_search_cv(hyper_params_iter, tune_iteration, model, idxes, X, y, random_state=0, verbose=True):
+def hyper_params_search_cv(hyper_params_iter, tune_iteration, model, idxes, df, y, random_state=0, verbose=True):
     params, metrics, best_boost_round = [], [], []
     for i, param_set in enumerate(ParameterSampler(hyper_params_iter, tune_iteration, random_state=random_state)):
         model.set_hyper_params(**param_set)
         params.append(param_set)
         val_metrics, best_rounds = [], []
         for tr_idx, val_idx in idxes:
-            tr_x, tr_y = X.iloc[tr_idx, :], y.iloc[tr_idx]
-            val_x, val_y = X.iloc[val_idx, :], y.iloc[val_idx]
+            tr_df, tr_y = df.iloc[tr_idx, :], y.iloc[tr_idx]
+            val_df, val_y = df.iloc[val_idx, :], y.iloc[val_idx]
+            sub_manager = MineFeatureManager(num_config={'missing_indicator': False}, categorical_config={'missing_indicator': False})
+            tr_x = sub_manager.get_model_features(tr_df)
+            val_x = sub_manager.transform_feature(val_df)
+            
             tr_dm, val_dm = to_xgb_dm(tr_x, tr_y), to_xgb_dm(val_x, val_y)
             model.train(tr_dm, val_dm, verbose_eval=True)
             val_metrics.append(mean_absolute_error(model.predict(val_x), val_y))
@@ -112,7 +116,7 @@ if __name__ == '__main__':
     X_test = feature_manager.transform_feature(test)
     print(X_dev.shape, X_test.shape)
     
-    kf = KFold(n_splits=10)
+    kf = KFold(n_splits=5)
     idxes = list(kf.split(X_dev))
     
     model = XGBModel(seed=1024)
@@ -124,7 +128,7 @@ if __name__ == '__main__':
             'colsample_bytree': [0.5, 0.7, 0.9],
             'gamma': [0, 0.01, 0.03, 0.1, 0.3],
             'lambda': [0.1, 0.3, 1]
-        }, 100, model, idxes, X_dev, df['logPrice'], random_state=1024
+        }, 100, model, idxes, df, df['logPrice'], random_state=1024
     )
     
     xgb_hyper_record.to_csv('data/result/after-eda-tuning-record.csv')
