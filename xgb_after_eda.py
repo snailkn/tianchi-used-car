@@ -24,11 +24,12 @@ class MineFeatureManager(FeatureManager):
     def __init__(self, num_config=None, categorical_config=None):
         self.num_features = [
             'power', 'kilometer', 'v_3', 'v_4', 'v_5', 'v_6', 'v_7', 'v_8', 'v_9', 'v_11', 
-            'v_12', 'v_13', 'v_14', 'carAge', 'v_10_1', 'v_10_2', 'v_10_3', 'modelEncode', 
-            'regionCodeEncode', 'gearbox', 'notRepairedDamage', 'seller', 'offerType'
+            'v_12', 'v_13', 'v_14', 'carAge', 'v_10_1', 'v_10_2', 'v_10_3', 'nameEncode', 
+            'modelEncode', 'regionCodeEncode', 'gearbox', 'notRepairedDamage', 'seller', 
+            'offerType'
         ]
-        self.categorical_features = ['model', 'brand', 'bodyType', 'fuelType']
-        self.encoded_cates = ['model', 'regionCode']
+        self.categorical_features = ['model', 'brand', 'bodyType', 'fuelType', 'createMon']
+        self.encoded_cates = ['name', 'model', 'regionCode']
         self.cate_encoder = LeaveOneOutEncoder(cols=self.encoded_cates)
         self.general_model = None
         super().__init__(self.num_features, self.categorical_features, num_config, categorical_config)
@@ -38,6 +39,7 @@ class MineFeatureManager(FeatureManager):
         features = features.replace({'power': zero_na, 'v_5': zero_na, 'v_6': zero_na})
         
         features['carAge'] = (features['creatDate'] - features['regDate']).apply(lambda x: x.days)
+        features['createMon'] = features['creatDate'].dt.month
         features['notRepairedDamage'] = features['notRepairedDamage'].replace('-', np.nan).astype(float)
         
         features.loc[features['power'] > 600, 'power'] = np.nan

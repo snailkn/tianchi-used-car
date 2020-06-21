@@ -1,5 +1,6 @@
 import copy
 import time
+import os
 
 import numpy as np
 import pandas as pd
@@ -19,8 +20,8 @@ class XGBModel(object):
         self.model = None
         self.param = {
             'objective': 'reg:squarederror',
-            'gpu_id': 0,
-            'tree_method': 'gpu_hist',
+#             'gpu_id': 0,
+            'tree_method': 'exact' if os.system('nvcc --version') else 'gpu_hist',
             'booster': 'dart',
             'seed': seed
         }
